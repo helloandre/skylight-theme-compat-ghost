@@ -1,0 +1,27 @@
+{
+	"name": "workers-compat-ghost-theme",
+	"version": "0.1.0",
+	"description": "",
+	"main": "dist/index.js",
+	"scripts": {
+		"build": "rimraf dist && npm run build:js && npm run build:d",
+		"build:dev": "rimraf dist && npm run build:d && npm run build:js-dev",
+		"build:js": "npx esbuild --bundle --minify --platform=node --outfile=dist/index.js ./src/index.ts",
+		"build:js-dev": "npx esbuild --bundle --watch --platform=node --outfile=dist/index.js ./src/index.ts",
+		"build:d": "tsc -p . --excludeFiles \"*.test.ts\"",
+		"local": "wrangler dev --local src/main.ts --compatibility-date=2023-04-12 --node-compat"
+	},
+	"author": "Andre Bluehs <hello@andre.blue>",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/luxon": "^3.3.0",
+		"esbuild": "^0.17.18",
+		"rimraf": "^5.0.0",
+		"typescript": "^5.0.4"
+	},
+	"dependencies": {
+		"handlebars": "^4.7.7",
+		"luxon": "^3.3.0",
+		"workers-hbs": "file:../workers-hbs"
+	}
+}
