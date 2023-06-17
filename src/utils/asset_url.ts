@@ -1,8 +1,6 @@
-// const crypto = require('crypto');
-// const config = require('../../shared/config');
 // const { blogIcon } = require('../../server/lib/image');
-// const urlUtils = require('../../shared/url-utils');
-import globalSettings from '../global_settings';
+import { ghost } from '../config/ghost';
+import { theme } from '../config/theme';
 
 /**
  * Serve either uploaded favicon or default
@@ -25,7 +23,7 @@ export default function getAssetUrl(path: string, hasMinFile: boolean) {
 	path = path.replace(/^\/?(assets)?/, '');
 
 	// replace ".foo" with ".min.foo" if configured
-	if (hasMinFile && globalSettings.get('useMinFiles') !== false) {
+	if (hasMinFile && ghost('useMinFiles') !== false) {
 		path = path.replace(/\.([^.]*)$/, '.min.$1');
 	}
 
@@ -39,12 +37,14 @@ export default function getAssetUrl(path: string, hasMinFile: boolean) {
 
 	// prepend the subdir
 	const output = [
-		globalSettings.get('subdir') + '/',
-		globalSettings.get('paths')?.contentPath ?? 'content',
+		ghost('subdir'),
+		'/',
+		ghost('paths.contentPath') ?? 'content',
 		'/',
 		'assets/',
 		path,
-		'?v=' + globalSettings.get('assetHash'),
+		'?v=',
+		theme('asset_hash'),
 	].join('');
 
 	return output + anchor;

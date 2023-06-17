@@ -15,40 +15,42 @@ const messages = {
 	valuesMustBeNumeric: 'Invalid value, check page, pages, limit and total are numbers',
 };
 
-export default function pagination(this: WorkersCompatGhost, options: HelperOptions) {
-	const data = getTemplateData(options);
+export default function (instance: WorkersCompatGhost) {
+	instance.hbs.registerHelper('pagination', function (options: HelperOptions) {
+		const data = getTemplateData(options);
 
-	if (!(typeof data.pagination === 'object') || typeof data.pagination === 'function') {
-		throw new Error(messages.invalidData);
-	}
+		if (!(typeof data.pagination === 'object') || typeof data.pagination === 'function') {
+			throw new Error(messages.invalidData);
+		}
 
-	const { next, prev, page, pages, total, limit } = data.pagination;
-	if (page === undefined || pages === undefined || total === undefined || limit === undefined) {
-		throw new Error(messages.valuesMustBeDefined);
-	}
+		const { next, prev, page, pages, total, limit } = data.pagination;
+		if (page === undefined || pages === undefined || total === undefined || limit === undefined) {
+			throw new Error(messages.valuesMustBeDefined);
+		}
 
-	// @TODO
-	// if (
-	// 	(!_.isNull(data.pagination.next) && !_.isNumber(data.pagination.next)) ||
-	// 	(!_.isNull(data.pagination.prev) && !_.isNumber(data.pagination.prev))
-	// ) {
-	// 	throw new Error(messages.nextPrevValuesMustBeNumeric);
-	// }
+		// @TODO
+		// if (
+		// 	(!_.isNull(data.pagination.next) && !_.isNumber(data.pagination.next)) ||
+		// 	(!_.isNull(data.pagination.prev) && !_.isNumber(data.pagination.prev))
+		// ) {
+		// 	throw new Error(messages.nextPrevValuesMustBeNumeric);
+		// }
 
-	// if (
-	// 	!_.isNumber(data.pagination.page) ||
-	// 	!_.isNumber(data.pagination.pages) ||
-	// 	!_.isNumber(data.pagination.total) ||
-	// 	!_.isNumber(data.pagination.limit)
-	// ) {
-	// 	throw new Error(messages.valuesMustBeNumeric);
-	// }
+		// if (
+		// 	!_.isNumber(data.pagination.page) ||
+		// 	!_.isNumber(data.pagination.pages) ||
+		// 	!_.isNumber(data.pagination.total) ||
+		// 	!_.isNumber(data.pagination.limit)
+		// ) {
+		// 	throw new Error(messages.valuesMustBeNumeric);
+		// }
 
-	// we cheat here and wrap the pagination with a {{#with pagination}}
-	// because that's essentially what ghost is doing, but, like, less transparently
-	return this.hbs.render(
-		'{{#with pagination}}' + PAGINATION + '{{/with}}',
-		{ ...data.pagination },
-		{ data: { _locals: data } }
-	);
+		// we cheat here and wrap the pagination with a {{#with pagination}}
+		// because that's essentially what ghost is doing, but, like, less transparently
+		return instance.hbs.render(
+			'{{#with pagination}}' + PAGINATION + '{{/with}}',
+			{ ...data.pagination },
+			{ data: { _locals: data } }
+		);
+	});
 }

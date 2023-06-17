@@ -1,42 +1,65 @@
 // @ts-ignore-next
-import { HelperDelegate } from 'handlebars';
-import hbs, { RenderVisitor } from 'workers-hbs';
+import { SafeString } from 'handlebars';
+import { WorkersHbs } from 'workers-hbs';
 import resolvePath from './utils/resolve_path';
-import { SITE, SAFE_VERSION } from './defaults';
-import globalSettings from './global_settings';
-import { clean } from './utils/links';
+import { GhostConfiguration, init as ghostInit } from './config/ghost';
+import { SiteConfiguration, site as siteConfig, init as siteInit } from './config/site';
+import { ThemeConfiguration, theme as themeConfig, init as customInit } from './config/theme';
 
-// helpers
+// helper registerers
+// this follows the same pattern as Handlebars/WorkersHBS
+// but diverges quite a bit from Ghost
 import asset from './helpers/asset';
+import authors from './helpers/authors';
 import body_class from './helpers/body_class';
 import concat from './helpers/concat';
+import content from './helpers/content';
 import date from './helpers/date';
+import excerpt from './helpers/excerpt';
 import foreach from './helpers/foreach';
+import get from './helpers/get';
+import ghost_foot from './helpers/ghost_foot';
 import ghost_head from './helpers/ghost_head';
+import has from './helpers/has';
 import img_url from './helpers/img_url';
+import is from './helpers/is';
 import link_class from './helpers/link_class';
 import match from './helpers/match';
 import meta_title from './helpers/meta_title';
 import navigation from './helpers/navigation';
 import pagination from './helpers/pagination';
 import page_url from './helpers/page_url';
+import post_class from './helpers/post_class';
+import url from './helpers/url';
 
-const HELPERS: { [idx: string]: HelperDelegate } = {
+const HELPERS: { [idx: string]: (inst: WorkersCompatGhost) => void } = {
 	asset,
+	authors,
 	body_class,
 	concat,
+	content,
 	date,
+	excerpt,
 	foreach,
+	get,
+	ghost_foot,
 	ghost_head,
+	has,
 	img_url,
+	is,
 	link_class,
 	match,
 	meta_title,
 	navigation,
 	pagination,
 	page_url,
+	post_class,
+	url,
 };
 
+export type { ThemeConfiguration } from './config/theme';
+export type { SiteConfiguration } from './config/site';
+export type { GhostConfiguration } from './config/ghost';
 export type TemplatesObj = {
 	index: string;
 	post: string;
@@ -44,130 +67,6 @@ export type TemplatesObj = {
 };
 export type PartialsObj = {
 	[idx: string]: string;
-};
-
-export type Post = {
-	id: string;
-	title: string;
-	slug: string;
-	html: string;
-	feature_image?: string;
-	featured: boolean;
-	type: 'page' | 'post';
-	status: 'draft' | 'scheduled' | 'published';
-	locale?: string;
-	visibility: 'public' | 'hidden';
-	created_at: string;
-	created_by: number;
-	updated_at: string;
-	updated_by: number;
-	published_at?: string;
-	published_by?: number;
-	custom_excerpt?: string;
-	codeinjection_head?: string;
-	codeinjection_foot?: string;
-	custom_template?: string;
-	canonical_url?: string;
-};
-
-// @see https://ghost.org/docs/config/
-export type PackageSettings = {
-	url: string;
-	assetHash: string; // hash to use for versioning of assets
-	// database	In production	Type of database used (default: MySQL)
-	// mail	In production	Add a mail service
-	admin?: { url: string }; // Optional	Set the protocol and hostname for your admin panel
-	// server?: string;	// Optional	Host and portqq for Ghost to listen on
-	privacy?: {
-		useTinfoil: boolean;
-		useUpdateCheck: boolean;
-		useGravatar: boolean;
-		useRpcPing: boolean;
-		useStructuredData: boolean;
-	}; //	Optional	// Disable features set in privacy.md
-	paths?: {
-		contentPath: string;
-	}; //	Optional	Customise internal paths
-	referrerPolicy?: string; //	Optional	Control the content attribute of the meta referrer tag
-	useMinFiles?: boolean; //	Optional	Generate assets url with .min notation
-	adapters?: any;
-	storage?: any; //	Optional	Set a custom storage adapter
-	scheduling?: any; //	Optional	Set a custom scheduling adapter
-	logging?: any; //	Optional	Configure logging for Ghost
-	spam?: any; //	Optional	Configure spam settings
-	caching?: any; //	Optional	Configure HTTP caching settings
-	compress?: boolean; //	Optional	Disable compression of server responses
-	imageOptimization?: {
-		resize: boolean;
-	}; // Optional	Configure image manipulation and processing
-	// opensea	Optional	Increase rate limit for fetching NFT embeds from OpenSea.io
-	// tenor	Optional	Enable integration with Tenor.com for embedding GIFs directly from the editor
-	twitter?: {
-		privateReadOnlyToken: string;
-	}; // Optional	Add support for rich twitter embeds in newsletters
-	portal?: {
-		url: string | false;
-	}; //	Optional	Relocate or remove the scripts for Portal
-	sodoSearch?: {
-		url: string | false;
-		styles?: string;
-	}; // Optional	Relocate or remove the scripts for Sodo search
-	comments?: {
-		url: string | false;
-		styles?: string;
-	};
-};
-
-// @see https://ghost.org/docs/themes/helpers/site/
-// accessable via @site
-export type SiteSettings = {
-	accent_color?: string;
-	cover_image?: string;
-	description?: string;
-	facebook?: string;
-	icon?: string;
-	locale?: string;
-	logo?: string;
-	navigation?: string;
-	posts_per_page?: string;
-	signup_url?: string;
-	timezone?: string;
-	title?: string;
-	twitter?: string;
-	url?: string; // generated
-	// @TODO
-	// members_enabled
-	// members_invite_only
-	// paid_members_enabled
-	meta_title?: string;
-	meta_description?: string;
-	twitter_image?: string;
-	twitter_title?: string;
-	twitter_description?: string;
-	og_image?: string;
-	og_title?: string;
-	og_description?: string;
-};
-
-// @see https://ghost.org/docs/themes/helpers/config/
-// accessable via @config
-type ConfigSettings = {
-	pages_per_post?: number;
-};
-
-// @see https://ghost.org/docs/themes/helpers/custom/
-// @see https://ghost.org/docs/themes/custom-settings/
-// accessable via @custom
-export type CustomThemeSettings = {
-	[idx: string]: any;
-};
-
-type GhostSettings = {
-	// @TODO
-	//  labs: {},
-	package: PackageSettings;
-	site: SiteSettings;
-	custom: CustomThemeSettings;
 };
 
 export type TemplateContextParam = {
@@ -197,9 +96,10 @@ export type PaginationSettings = {
  * Regex pattern for layout directive. {{!< layout }}
  */
 const LAYOUT_PATTERN = /{{!<\s+([A-Za-z0-9\._\-\/]+)\s*}}/;
+const SAFE_VERSION = '0.0.1';
 
 export class WorkersCompatGhost {
-	hbs: RenderVisitor;
+	hbs: typeof WorkersHbs;
 	// we know this is empty, this is checked later
 	// @ts-ignore-next
 	private templates: TemplatesObj;
@@ -210,11 +110,9 @@ export class WorkersCompatGhost {
 	private runtimeOptions: any = {};
 
 	constructor() {
-		this.hbs = new hbs();
+		this.hbs = new WorkersHbs();
 
-		Object.keys(HELPERS).forEach(key => {
-			this.hbs.registerHelper(key, HELPERS[key].bind(this));
-		});
+		Object.keys(HELPERS).forEach(key => HELPERS[key](this));
 	}
 
 	/**
@@ -244,24 +142,15 @@ export class WorkersCompatGhost {
 	 * @see https://ghost.org/docs/config/
 	 * @see https://ghost.org/docs/themes/helpers/site/
 	 * @see https://ghost.org/docs/themes/custom-settings/
+	 *
+	 * ghost - typically statically defined via a config file, per-environment
+	 * site - dynamically defined, provided by ghost settings panel.
+	 * custom - dynamically defined, as expected by the current theme
 	 */
-	withConfig(pkg: PackageSettings, site: SiteSettings, custom: CustomThemeSettings) {
-		if (pkg.admin) {
-			pkg.admin.url = clean(pkg.admin?.url);
-		}
-		site.url = clean(pkg.url);
-		this.settings = {
-			site,
-			package: pkg,
-			custom,
-		};
-
-		globalSettings.init({
-			...site,
-			...pkg,
-			...custom,
-			subdir: new URL(site.url).pathname.replace(/\/$/, ''),
-		});
+	withConfig(ghost: GhostConfiguration, site: SiteConfiguration, custom: ThemeConfiguration) {
+		ghostInit(ghost);
+		siteInit(site, ghost);
+		customInit(custom);
 
 		return this;
 	}
@@ -275,11 +164,19 @@ export class WorkersCompatGhost {
 	 * 		for root.context @see https://ghost.org/docs/themes/contexts/
 	 */
 	render(templateName: keyof TemplatesObj, root: TemplateContextParam) {
-		// @TODO figure out exactly what needs to be .init()'d in config
+		const site = siteConfig();
+		const theme = themeConfig();
+
+		// man, i dunno
+		// @see https://github.com/TryGhost/Ghost/blob/5b2ba79cef8d751c57e6ae214a458f03719511b0/ghost/core/core/frontend/helpers/ghost_head.js#L138
+		root._locals = {
+			context: root.context,
+			safeVersion: SAFE_VERSION,
+		};
 
 		// @TODO add things from the Ghost Context (like post, etc)
 		this.context = {
-			meta_title: this.settings.site.meta_title,
+			meta_title: site.meta_title,
 			...root,
 		};
 
@@ -287,19 +184,11 @@ export class WorkersCompatGhost {
 			// available via @-variables
 			data: {
 				config: {
-					posts_per_page: this.settings.site.posts_per_page,
+					posts_per_page: site.posts_per_page,
 				},
-				site: {
-					...SITE,
-					...this.settings.site,
-				},
-				// @TODO support custom settings
-				// with actual proper package.custom settings
-				custom: this.settings.custom,
-				_locals: {
-					...root,
-					safeVersion: SAFE_VERSION,
-				},
+				site,
+				custom: theme,
+				root,
 			},
 		};
 
@@ -314,13 +203,8 @@ export class WorkersCompatGhost {
 			throw new Error(`unknown template ${templateName}`);
 		}
 
-		if (child) {
-			this.context.body = child;
-		} else {
-			this.context.body = '';
-		}
-
-		let templateStr = this.templates[templateName];
+		const templateStr = this.templates[templateName];
+		this.context.body = child ? new SafeString(child) : '';
 
 		const matches = templateStr.match(LAYOUT_PATTERN);
 		// we have to go a level higher into a parent template

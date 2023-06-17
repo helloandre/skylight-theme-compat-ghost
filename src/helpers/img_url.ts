@@ -7,17 +7,16 @@
 // Returns the URL for the current object scope i.e. If inside a post scope will return image permalink
 // `absolute` flag outputs absolute URL, else URL is relative.
 import { HelperOptions } from 'handlebars';
+import { WorkersCompatGhost } from '..';
 // we get this from requiring node_compat=true in wrangler.toml
 // @ts-ignore-next
 import url from 'url';
-import { WorkersCompatGhost } from '..';
-import globalConfig from '../global_settings';
+import { ghost } from '../config/ghost';
+import { STATIC_IMAGE_URL_PREFIX } from '../utils/urls';
 
 const messages = {
 	attrIsRequired: 'Attribute is required e.g. {{img_url feature_image}}',
 };
-
-const STATIC_IMAGE_URL_PREFIX = `content/images`;
 
 type SizeOptions = {
 	requestedSize?: string;
@@ -30,53 +29,58 @@ type SizeOptions = {
  *
  * this may incorrectly do the relative/absolute thing, not sure yet
  */
-export default function imgUrl(requestedImageUrl: string, options: HelperOptions) {
-	// CASE: if no url is passed, e.g. `{{img_url}}` we show a warning
-	if (arguments.length < 2) {
-		// logging.warn(tpl(messages.attrIsRequired));
-		return;
-	}
-
-	// CASE: if url is passed, but it is undefined, then the attribute was
-	// an unknown value, e.g. {{img_url feature_img}} and we also show a warning
-	if (requestedImageUrl === undefined) {
-		// logging.warn(tpl(messages.attrIsRequired));
-		return;
-	}
-
-	// CASE: if you pass e.g. cover_image, but it is not set, then requestedImageUrl is null!
-	// in this case we don't show a warning
-	if (requestedImageUrl === null) {
-		return;
-	}
-
-	// CASE: if you pass an external image, there is nothing we want to do to it!
-	const siteUrl = globalConfig.get('url');
-	const isInternalImage = detectInternalImage(requestedImageUrl, siteUrl);
-	const sizeOptions = getImageSizeOptions(options);
-
-	if (!isInternalImage) {
-		// Detect Unsplash width and format
-		if (/images\.unsplash\.com/.test(requestedImageUrl)) {
-			try {
-				return getUnsplashImage(requestedImageUrl, sizeOptions);
-			} catch (e) {
-				// ignore errors and just return the original URL
+export default function (instance: WorkersCompatGhost) {
+	instance.hbs.registerHelper(
+		'img_url',
+		function (requestedImageUrl: string, options: HelperOptions) {
+			// CASE: if no url is passed, e.g. `{{img_url}}` we show a warning
+			if (arguments.length < 2) {
+				// logging.warn(tpl(messages.attrIsRequired));
+				return;
 			}
+
+			// CASE: if url is passed, but it is undefined, then the attribute was
+			// an unknown value, e.g. {{img_url feature_img}} and we also show a warning
+			if (requestedImageUrl === undefined) {
+				// logging.warn(tpl(messages.attrIsRequired));
+				return;
+			}
+
+			// CASE: if you pass e.g. cover_image, but it is not set, then requestedImageUrl is null!
+			// in this case we don't show a warning
+			if (requestedImageUrl === null) {
+				return;
+			}
+
+			// CASE: if you pass an external image, there is nothing we want to do to it!
+			const siteUrl = ghost('url');
+			const isInternalImage = detectInternalImage(requestedImageUrl, siteUrl);
+			const sizeOptions = getImageSizeOptions(options);
+
+			if (!isInternalImage) {
+				// Detect Unsplash width and format
+				if (/images\.unsplash\.com/.test(requestedImageUrl)) {
+					try {
+						return getUnsplashImage(requestedImageUrl, sizeOptions);
+					} catch (e) {
+						// ignore errors and just return the original URL
+					}
+				}
+
+				return requestedImageUrl;
+			}
+
+			return [
+				getAbsoluteOption(options) ? siteUrl + '/' : '',
+				requestedImageUrl.startsWith('/') ? '/' : '',
+				STATIC_IMAGE_URL_PREFIX,
+				'/',
+				getImageWithSize(requestedImageUrl, sizeOptions)
+					.replace(new RegExp(`^${siteUrl}`), '')
+					.replace(new RegExp(`^/?${STATIC_IMAGE_URL_PREFIX}`), ''),
+			].join('');
 		}
-
-		return requestedImageUrl;
-	}
-
-	return [
-		getAbsoluteOption(options) ? siteUrl + '/' : '',
-		requestedImageUrl.startsWith('/') ? '/' : '',
-		STATIC_IMAGE_URL_PREFIX,
-		'/',
-		getImageWithSize(requestedImageUrl, sizeOptions)
-			.replace(new RegExp(`^${siteUrl}`), '')
-			.replace(new RegExp(`^/?${STATIC_IMAGE_URL_PREFIX}`), ''),
-	].join('');
+	);
 }
 
 function getAbsoluteOption(options: HelperOptions) {

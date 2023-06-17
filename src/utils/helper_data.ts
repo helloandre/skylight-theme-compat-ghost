@@ -5,9 +5,9 @@ export function getContext(options: HelperOptions) {
 }
 
 export function getTemplateData(options: HelperOptions) {
-	return options.data?.root?.runtimeOptions?.data?._locals || {};
+	return options.data?.root || {};
 }
 
 export function getSiteData(options: HelperOptions) {
-	return options.data?.root?.runtimeOptions?.data?.site || {};
+	return options.data?.root?.site || {};
 }

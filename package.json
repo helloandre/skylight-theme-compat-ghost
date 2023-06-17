@@ -14,6 +14,7 @@
 	"author": "Andre Bluehs <hello@andre.blue>",
 	"license": "MIT",
 	"devDependencies": {
+		"@types/lodash-es": "^4.17.7",
 		"@types/luxon": "^3.3.0",
 		"esbuild": "^0.17.18",
 		"rimraf": "^5.0.0",
@@ -21,7 +22,9 @@
 	},
 	"dependencies": {
 		"handlebars": "^4.7.7",
+		"lodash-es": "^4.17.21",
 		"luxon": "^3.3.0",
+		"truncate-html": "^1.0.4",
 		"workers-hbs": "file:../workers-hbs"
 	}
 }

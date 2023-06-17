@@ -1,13 +1,11 @@
 // ### Navigation Helper
 // `{{navigation}}`
 // Outputs navigation menu of static urls
-import { HelperOptions } from 'handlebars';
-import { SafeString } from 'workers-hbs';
+import { HelperOptions, SafeString } from 'handlebars';
 import NAVIGATION from '../partials/navigation';
-import { getTemplateData } from '../utils/helper_data';
-import { NavigationSettings, WorkersCompatGhost } from '..';
 import { isEqual } from '../utils/links';
 import slugify from '../utils/slugify';
+import { WorkersCompatGhost } from '..';
 
 const messages = {
 	invalidData: 'navigation data is not an object or is a function',
@@ -15,36 +13,46 @@ const messages = {
 	valuesMustBeString: 'Invalid value, Url and Label must be strings',
 };
 
-export default function navigation(this: WorkersCompatGhost, options: HelperOptions) {
-	const hash = options.hash || {};
-	const data = getTemplateData(options);
+export default function (instance: WorkersCompatGhost) {
+	instance.hbs.registerHelper('navigation', function (options: HelperOptions) {
+		const key = options.hash?.type === 'secondary' ? 'secondary_navigation' : 'navigation';
+		// Set isSecondary so we can compare in the template
+		options.hash.isSecondary = !!(options.hash?.type === 'secondary');
 
-	if (!(typeof data.navigation === 'object') || typeof data.navigation === 'function') {
-		throw new Error(messages.invalidData);
-	}
+		const navigationData = options.data.site[key];
+		const currentUrl = options.data.root.relativeUrl;
 
-	const key = hash.type === 'secondary' ? 'secondary_navigation' : 'navigation';
-	// Set isSecondary so we can compare in the template
-	const isSecondary = !!(options.hash.type && options.hash.type === 'secondary');
-	const currentUrl = data.relativeUrl;
+		if (!navigationData || navigationData.length === 0) {
+			return new SafeString('');
+		}
 
-	// {{navigation}} should no-op if no data passed in
-	console.log('data', data);
-	if (data.navigation.length === 0) {
-		return new SafeString('');
-	}
+		if (!(typeof navigationData === 'object') || typeof navigationData === 'function') {
+			throw new Error(messages.invalidData);
+		}
 
-	const navigation: any = (data.navigation as NavigationSettings).map(({ url, label, slug }) => ({
-		label,
-		url,
-		slug: slug ?? slugify(label),
-		current: isEqual(url, currentUrl),
-	}));
-	console.log({ navigation });
+		if (navigationData.some((e: any) => e.label === undefined || e.url === undefined)) {
+			throw new Error(messages.valuesMustBeDefined);
+		}
 
-	return this.hbs.render(
-		NAVIGATION,
-		{ navigation, isSecondary, ...hash },
-		{ data: { _locals: data } }
-	);
+		if (
+			navigationData.some(
+				(e: any) =>
+					(e.label !== null && typeof e.label !== 'string') ||
+					(e.url !== null && typeof e.url !== 'string')
+			)
+		) {
+			throw new Error(messages.valuesMustBeString);
+		}
+
+		const navigation = navigationData.map((e: any) => ({
+			current: currentUrl ? isEqual(e.url, currentUrl) : false,
+			label: e.label,
+			slug: slugify(e.label),
+			url: e.url,
+		}));
+
+		return new SafeString(
+			instance.hbs.render(NAVIGATION, { navigation, ...options.hash }, { data: options.data })
+		);
+	});
 }

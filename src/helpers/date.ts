@@ -3,10 +3,10 @@
 // //
 // // Formats a date using moment-timezone.js. Formats published_at by default but will also take a date as a parameter
 
-import { SafeString } from 'workers-hbs';
 import { DateTime } from 'luxon';
 import { getSiteData } from '../utils/helper_data';
-import { HelperOptions } from 'handlebars';
+import { HelperOptions, SafeString } from 'handlebars';
+import { WorkersCompatGhost } from '..';
 
 // const moment = require('moment-timezone');
 // const _ = require('lodash');
@@ -14,29 +14,39 @@ import { HelperOptions } from 'handlebars';
 /**
  * For formatting options, @see https://moment.github.io/luxon/#/formatting
  */
-export default function date(date: string | HelperOptions, options: HelperOptions) {
-	if (!options) {
-		options = date as HelperOptions;
-		date = '';
-	}
-	// @TODO support magically reading published_at from context
-	const site = getSiteData(options);
+export default function (instance: WorkersCompatGhost) {
+	instance.hbs.registerHelper(
+		'date',
+		function (date: string | HelperOptions, options: HelperOptions) {
+			if (!options) {
+				options = date as HelperOptions;
+				date = '';
+			}
+			// @TODO support magically reading published_at from context
+			const site = getSiteData(options);
 
-	const {
-		format = 'll',
-		timeago,
-		timezone = site.timezone,
-		locale = site.locale,
-	} = options.hash || {};
+			let {
+				format = 'DD',
+				timeago,
+				timezone = site.timezone,
+				locale = site.locale,
+			} = options.hash || {};
 
-	const timeNow = DateTime.now().setZone(timezone).setLocale(locale);
-	const timeOut = ((date as string).length ? DateTime.fromISO(date as string) : DateTime.now())
-		.setZone(timezone)
-		.setLocale(locale);
+			// moment -> luxon
+			if (format === 'YYYY') {
+				format = 'y';
+			}
 
-	const out = timeago ? timeNow.toRelative({ base: timeOut }) : timeOut.toFormat(format);
+			const timeNow = DateTime.now().setZone(timezone).setLocale(locale);
+			const timeOut = ((date as string).length ? DateTime.fromISO(date as string) : DateTime.now())
+				.setZone(timezone)
+				.setLocale(locale);
 
-	return new SafeString(out ? out.toString() : '');
+			const out = timeago ? timeNow.toRelative({ base: timeOut }) : timeOut.toFormat(format);
+
+			return new SafeString(out ? out.toString() : '');
+		}
+	);
 }
 
 // module.exports = function (...attrs) {

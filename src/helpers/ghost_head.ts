@@ -10,27 +10,185 @@
 // 	urlUtils,
 // 	getFrontendKey,
 // } = require('../services/proxy');
-import { HelperOptions } from 'handlebars';
-import { escapeExpression, SafeString } from 'workers-hbs';
+import { HelperOptions, escapeExpression, SafeString } from 'handlebars';
+import { WorkersCompatGhost } from '..';
+import { site as siteConfig } from '../config/site';
+import { privacyDisabled, ghost as ghostConfig } from '../config/ghost';
+import { GhostMetadata, metadata } from '../utils/metadata/index';
+import isEmpty from '../utils/is_empty';
 
-export default function ghost_head(options: HelperOptions) {
-	const { site, _locals } = options.data?.root?.runtimeOptions?.data;
-
-	let head = [];
-
-	if (site) {
-		if (site.meta_description && site.meta_description.length > 0) {
-			head.push(`<meta name="description" content="${escapeExpression(site.meta_description)}" />`);
-		}
+function iconType(icon: string) {
+	// If the native format is supported, return the native format
+	if (icon.match(/.ico$/i)) {
+		return 'ico';
 	}
 
-	head.push(
-		`<meta name="generator" content="WorkersCompatGhost ${escapeExpression(
-			_locals?.safeVersion || ''
-		)}" />`
-	);
+	if (icon.match(/.jpe?g$/i)) {
+		return 'jpeg';
+	}
 
-	return new SafeString(head.join('\n      '));
+	if (icon.match(/.png$/i)) {
+		return 'png';
+	}
+
+	// Default to png for all other types
+	return 'png';
+}
+
+function has(arr: string[], val: string) {
+	return arr && arr.includes(val);
+}
+
+export default function (instance: WorkersCompatGhost) {
+	instance.hbs.registerHelper('ghost_head', function (options: HelperOptions) {
+		// if server error page do nothing
+		// TODO support errors
+		if (options.data.root.statusCode >= 500) {
+			return;
+		}
+
+		const head: string[] = [];
+		const dataRoot = options.data.root;
+		const context = dataRoot._locals.context ?? null;
+		const safeVersion = dataRoot._locals.safeVersion;
+		const postCodeInjection = dataRoot?.post?.codeinjection_head;
+		const tagCodeInjection = dataRoot?.tag?.codeinjection_head;
+		const globalCodeinjection = siteConfig('codeinjection_head');
+		const useStructuredData = !privacyDisabled('useStructuredData');
+		const referrerPolicy = ghostConfig('referrerPolicy') ?? 'no-referrer-when-downgrade';
+
+		try {
+			const meta = metadata(dataRoot, context);
+			// const frontendKey = await getFrontendKey();
+
+			if (context) {
+				// head is our main array that holds our meta data
+				if (meta.metaDescription && meta.metaDescription.length > 0) {
+					head.push(
+						'<meta name="description" content="' + escapeExpression(meta.metaDescription) + '" />'
+					);
+				}
+
+				// no output in head if a publication icon is not set
+				if (siteConfig('icon')) {
+					const favicon = siteConfig('icon');
+					head.push(`<link rel="icon" href="${favicon}" type="image/${iconType(favicon)}" />`);
+				}
+
+				head.push('<link rel="canonical" href="' + escapeExpression(meta.canonicalUrl) + '" />');
+
+				if (has(context, 'preview')) {
+					head.push(writeMetaTag('robots', 'noindex,nofollow', 'name'));
+					head.push(writeMetaTag('referrer', 'same-origin', 'name'));
+				} else {
+					head.push(writeMetaTag('referrer', referrerPolicy, 'name'));
+				}
+
+				// show amp link in post when 1. we are not on the amp page and 2. amp is enabled
+				// this is deprecated, right? amp is dead?
+				// if (
+				// 	has(context, 'post') &&
+				// 	!has(context, 'amp') &&
+				// 	settingsCache.get('amp')
+				// ) {
+				// 	head.push('<link rel="amphtml" href="' + escapeExpression(meta.ampUrl) + '" />');
+				// }
+
+				if (meta.previousUrl) {
+					head.push('<link rel="prev" href="' + escapeExpression(meta.previousUrl) + '" />');
+				}
+
+				if (meta.nextUrl) {
+					head.push('<link rel="next" href="' + escapeExpression(meta.nextUrl) + '" />');
+				}
+
+				if (!has(context, 'paged') && useStructuredData) {
+					head.push('');
+					head.push.apply(head, finaliseStructuredData(meta));
+					head.push('');
+
+					if (meta.schema) {
+						head.push(
+							'<script type="application/ld+json">\n' +
+								JSON.stringify(meta.schema, null, '    ') +
+								'\n    </script>\n'
+						);
+					}
+				}
+			}
+
+			head.push('<meta name="generator" content="Ghost ' + escapeExpression(safeVersion) + '" />');
+
+			head.push(
+				'<link rel="alternate" type="application/rss+xml" title="' +
+					escapeExpression(meta.site.title) +
+					'" href="' +
+					escapeExpression(meta.rssUrl) +
+					'" />'
+			);
+
+			// no code injection for amp context!!!
+			if (!has(context, 'amp')) {
+				// head.push(getMembersHelper(options.data, frontendKey));
+				// head.push(getSearchHelper(frontendKey));
+
+				// @TODO do this in a more "frameworky" way
+				// if (cardAssetService.hasFile('js')) {
+				// 	head.push(`<script defer src="${getAssetUrl('public/cards.min.js')}"></script>`);
+				// }
+				// if (cardAssetService.hasFile('css')) {
+				// 	head.push(
+				// 		`<link rel="stylesheet" type="text/css" href="${getAssetUrl('public/cards.min.css')}">`
+				// 	);
+				// }
+
+				// if (settingsCache.get('comments_enabled') !== 'off') {
+				// 	head.push(
+				// 		`<script defer src="${getAssetUrl(
+				// 			'public/comment-counts.min.js'
+				// 		)}" data-ghost-comments-counts-api="${urlUtils.getSiteUrl(
+				// 			true
+				// 		)}members/api/comments/counts/"></script>`
+				// 	);
+				// }
+
+				// if (settingsCache.get('members_enabled') && settingsCache.get('members_track_sources')) {
+				// 	head.push(
+				// 		`<script defer src="${getAssetUrl('public/member-attribution.min.js')}"></script>`
+				// 	);
+				// }
+
+				if (!isEmpty(globalCodeinjection)) {
+					head.push(globalCodeinjection);
+				}
+
+				if (!isEmpty(postCodeInjection)) {
+					head.push(postCodeInjection);
+				}
+
+				if (!isEmpty(tagCodeInjection)) {
+					head.push(tagCodeInjection);
+				}
+			}
+
+			// AMP template has style injected directly because there can only be one <style amp-custom> tag
+			if (siteConfig('accent_color') && !has(context, 'amp')) {
+				const accentColor = escapeExpression(options.data.site.accent_color);
+				const styleTag = `<style>:root {--ghost-accent-color: ${accentColor};}</style>`;
+				const existingScriptIndex = head.findLastIndex(str => str.match(/<\/(style|script)>/));
+
+				if (existingScriptIndex !== -1) {
+					head[existingScriptIndex] = head[existingScriptIndex] + styleTag;
+				} else {
+					head.push(styleTag);
+				}
+			}
+			return new SafeString(head.join('\n    ').trim());
+		} catch (error) {
+			// Return what we have so far (currently nothing)
+			return new SafeString(head.join('\n    ').trim());
+		}
+	});
 }
 
 // BAD REQUIRE
@@ -45,30 +203,35 @@ export default function ghost_head(options: HelperOptions) {
 
 // const { get: getMetaData, getAssetUrl } = metaData;
 
-// function writeMetaTag(property, content, type) {
-// 	type = type || property.substring(0, 7) === 'twitter' ? 'name' : 'property';
-// 	return '<meta ' + type + '="' + property + '" content="' + content + '" />';
-// }
+function writeMetaTag(property: string, content: string, type?: string) {
+	type = type || property.substring(0, 7) === 'twitter' ? 'name' : 'property';
+	return '<meta ' + type + '="' + property + '" content="' + content + '" />';
+}
 
-// function finaliseStructuredData(meta) {
-// 	const head = [];
+function finaliseStructuredData(meta: GhostMetadata) {
+	const head: string[] = [];
 
-// 	_.each(meta.structuredData, function (content, property) {
-// 		if (property === 'article:tag') {
-// 			_.each(meta.keywords, function (keyword) {
-// 				if (keyword !== '') {
-// 					keyword = escapeExpression(keyword);
-// 					head.push(writeMetaTag(property, escapeExpression(keyword)));
-// 				}
-// 			});
-// 			head.push('');
-// 		} else if (content !== null && content !== undefined) {
-// 			head.push(writeMetaTag(property, escapeExpression(content)));
-// 		}
-// 	});
+	Object.keys(meta.structuredData).forEach(property => {
+		let content = meta.structuredData[property as keyof GhostMetadata['structuredData']];
+		if (Array.isArray(content)) {
+			content = content.join(',');
+		}
 
-// 	return head;
-// }
+		if (property === 'article:tag') {
+			meta.keywords?.forEach(keyword => {
+				if (keyword !== '') {
+					keyword = escapeExpression(keyword);
+					head.push(writeMetaTag(property, escapeExpression(keyword)));
+				}
+			});
+			head.push('');
+		} else if (content !== null && content !== undefined) {
+			head.push(writeMetaTag(property, escapeExpression(content)));
+		}
+	});
+
+	return head;
+}
 
 // function getMembersHelper(data, frontendKey) {
 // 	if (!settingsCache.get('members_enabled')) {
@@ -199,7 +362,7 @@ export default function ghost_head(options: HelperOptions) {
 
 // 			head.push('<link rel="canonical" href="' + escapeExpression(meta.canonicalUrl) + '" />');
 
-// 			if (_.includes(context, 'preview')) {
+// 			if (has(context, 'preview')) {
 // 				head.push(writeMetaTag('robots', 'noindex,nofollow', 'name'));
 // 				head.push(writeMetaTag('referrer', 'same-origin', 'name'));
 // 			} else {
@@ -207,7 +370,7 @@ export default function ghost_head(options: HelperOptions) {
 // 			}
 
 // 			// show amp link in post when 1. we are not on the amp page and 2. amp is enabled
-// 			if (_.includes(context, 'post') && !_.includes(context, 'amp') && settingsCache.get('amp')) {
+// 			if (has(context, 'post') && !has(context, 'amp') && settingsCache.get('amp')) {
 // 				head.push('<link rel="amphtml" href="' + escapeExpression(meta.ampUrl) + '" />');
 // 			}
 
@@ -219,7 +382,7 @@ export default function ghost_head(options: HelperOptions) {
 // 				head.push('<link rel="next" href="' + escapeExpression(meta.nextUrl) + '" />');
 // 			}
 
-// 			if (!_.includes(context, 'paged') && useStructuredData) {
+// 			if (!has(context, 'paged') && useStructuredData) {
 // 				head.push('');
 // 				head.push.apply(head, finaliseStructuredData(meta));
 // 				head.push('');
@@ -245,7 +408,7 @@ export default function ghost_head(options: HelperOptions) {
 // 		);
 
 // 		// no code injection for amp context!!!
-// 		if (!_.includes(context, 'amp')) {
+// 		if (!has(context, 'amp')) {
 // 			head.push(getMembersHelper(options.data, frontendKey));
 // 			head.push(getSearchHelper(frontendKey));
 
@@ -289,7 +452,7 @@ export default function ghost_head(options: HelperOptions) {
 // 		}
 
 // 		// AMP template has style injected directly because there can only be one <style amp-custom> tag
-// 		if (options.data.site.accent_color && !_.includes(context, 'amp')) {
+// 		if (options.data.site.accent_color && !has(context, 'amp')) {
 // 			const accentColor = escapeExpression(options.data.site.accent_color);
 // 			const styleTag = `<style>:root {--ghost-accent-color: ${accentColor};}</style>`;
 // 			const existingScriptIndex = _.findLastIndex(head, str => str.match(/<\/(style|script)>/));
