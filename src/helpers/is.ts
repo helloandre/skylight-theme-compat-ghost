@@ -1,7 +1,7 @@
 // # Is Helper
 // Usage: `{{#is "paged"}}`, `{{#is "index, paged"}}`
 // Checks whether we're in a given context.
-import { HelperOptions } from 'handlebars';
+import type { HelperOptions } from 'handlebars';
 import { WorkersCompatGhost } from '..';
 
 const messages = {

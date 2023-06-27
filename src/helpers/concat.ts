@@ -1,4 +1,4 @@
-import { SafeString } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import { WorkersCompatGhost } from '..';
 
 export default function (instance: WorkersCompatGhost) {
@@ -6,6 +6,6 @@ export default function (instance: WorkersCompatGhost) {
 		const options = args.pop();
 		const separator = options.hash.separator || '';
 
-		return new SafeString(args.join(separator));
+		return new Handlebars.SafeString(args.join(separator));
 	});
 }

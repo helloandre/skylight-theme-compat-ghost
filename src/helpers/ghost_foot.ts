@@ -3,7 +3,7 @@
 //
 
 import type { HelperOptions } from 'handlebars';
-import { SafeString } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import { site as siteConfig } from '../config/site';
 import isEmpty from '../utils/is_empty';
 import { WorkersCompatGhost } from '..';
@@ -35,6 +35,6 @@ export default function (instance: WorkersCompatGhost) {
 			foot.push(tagCodeinjection);
 		}
 
-		return new SafeString(foot.join(' ').trim());
+		return new Handlebars.SafeString(foot.join(' ').trim());
 	});
 }

@@ -10,7 +10,8 @@
 //
 // Dev flag feature: In case of restricted content access for member-only posts, shows CTA box
 import type { WorkersCompatGhost } from '..';
-import { SafeString, HelperOptions } from 'handlebars';
+import type { HelperOptions } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import truncate from '../utils/truncate';
 
 // function restrictedCta(options) {
@@ -37,9 +38,9 @@ export default function (instance: WorkersCompatGhost) {
 		// }
 
 		if (options.hash?.hasOwnProperty('words') || options.hash?.hasOwnProperty('characters')) {
-			return new SafeString(truncate(this.html, options.hash || {}));
+			return new Handlebars.SafeString(truncate(this.html, options.hash || {}));
 		}
 
-		return new SafeString(this.html);
+		return new Handlebars.SafeString(this.html);
 	});
 }

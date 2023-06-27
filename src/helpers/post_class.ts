@@ -2,7 +2,7 @@
 // Usage: `{{post_class}}`
 //
 // Output classes for the body element
-import { SafeString } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import type { WorkersCompatGhost } from '..';
 
 // We use the name post_class to match the helper for consistency:
@@ -33,6 +33,6 @@ export default function (instance: WorkersCompatGhost) {
 			classes.push('page');
 		}
 
-		return new SafeString(classes.join(' ').trim());
+		return new Handlebars.SafeString(classes.join(' ').trim());
 	});
 }

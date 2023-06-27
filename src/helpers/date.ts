@@ -5,7 +5,8 @@
 
 import { DateTime } from 'luxon';
 import { getSiteData } from '../utils/helper_data';
-import { HelperOptions, SafeString } from 'handlebars';
+import { HelperOptions } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import { WorkersCompatGhost } from '..';
 
 // const moment = require('moment-timezone');
@@ -44,7 +45,7 @@ export default function (instance: WorkersCompatGhost) {
 
 			const out = timeago ? timeNow.toRelative({ base: timeOut }) : timeOut.toFormat(format);
 
-			return new SafeString(out ? out.toString() : '');
+			return new Handlebars.SafeString(out ? out.toString() : '');
 		}
 	);
 }

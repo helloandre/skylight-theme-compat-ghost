@@ -2,7 +2,8 @@
 // Usage: `{{asset "css/screen.css"}}`
 //
 
-import { HelperOptions, SafeString } from 'handlebars';
+import type { HelperOptions } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import assetUrl from '../utils/asset_url';
 import { ghost } from '../config/ghost';
 import { WorkersCompatGhost } from '..';
@@ -22,8 +23,8 @@ export default function (instance: WorkersCompatGhost) {
 		const admin = ghost('admin');
 		const asset = assetUrl(path, hasMinFile);
 		if (url && admin && url !== admin) {
-			return new SafeString(new URL(asset, url).href);
+			return new Handlebars.SafeString(new URL(asset, url).href);
 		}
-		return new SafeString(asset);
+		return new Handlebars.SafeString(asset);
 	});
 }

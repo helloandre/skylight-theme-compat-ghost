@@ -1,7 +1,8 @@
 // ### Navigation Helper
 // `{{navigation}}`
 // Outputs navigation menu of static urls
-import { HelperOptions, SafeString } from 'handlebars';
+import { HelperOptions } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import NAVIGATION from '../partials/navigation';
 import { isEqual } from '../utils/links';
 import slugify from '../utils/slugify';
@@ -23,7 +24,7 @@ export default function (instance: WorkersCompatGhost) {
 		const currentUrl = options.data.root.relativeUrl;
 
 		if (!navigationData || navigationData.length === 0) {
-			return new SafeString('');
+			return new Handlebars.SafeString('');
 		}
 
 		if (!(typeof navigationData === 'object') || typeof navigationData === 'function') {
@@ -51,7 +52,7 @@ export default function (instance: WorkersCompatGhost) {
 			url: e.url,
 		}));
 
-		return new SafeString(
+		return new Handlebars.SafeString(
 			instance.hbs.render(NAVIGATION, { navigation, ...options.hash }, { data: options.data })
 		);
 	});

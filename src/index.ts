@@ -1,6 +1,5 @@
 // @ts-ignore-next
-import { SafeString } from 'handlebars';
-import { WorkersHbs } from 'workers-hbs';
+import { WorkersHbs, Handlebars } from 'workers-hbs';
 import resolvePath from './utils/resolve_path';
 import { GhostConfiguration, init as ghostInit } from './config/ghost';
 import { SiteConfiguration, site as siteConfig, init as siteInit } from './config/site';
@@ -204,7 +203,7 @@ export class WorkersCompatGhost {
 		}
 
 		const templateStr = this.templates[templateName];
-		this.context.body = child ? new SafeString(child) : '';
+		this.context.body = child ? new Handlebars.SafeString(child) : '';
 
 		const matches = templateStr.match(LAYOUT_PATTERN);
 		// we have to go a level higher into a parent template

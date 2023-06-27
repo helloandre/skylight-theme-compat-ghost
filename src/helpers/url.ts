@@ -1,4 +1,5 @@
-import { HelperOptions, SafeString } from 'handlebars';
+import { HelperOptions } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import { getMetadataUrl } from '../utils/urls';
 import { WorkersCompatGhost } from '..';
 
@@ -16,9 +17,9 @@ export default function (instance: WorkersCompatGhost) {
 		try {
 			outputUrl = encodeURI(decodeURI(outputUrl)).replace(/%5B/g, '[').replace(/%5D/g, ']');
 		} catch (err) {
-			return new SafeString('');
+			return new Handlebars.SafeString('');
 		}
 
-		return new SafeString(outputUrl);
+		return new Handlebars.SafeString(outputUrl);
 	});
 }

@@ -1,4 +1,5 @@
-import { HelperOptions, SafeString } from 'handlebars';
+import type { HelperOptions } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import { WorkersCompatGhost } from '..';
 
 // # link_class helper
@@ -29,6 +30,6 @@ export default function (instance: WorkersCompatGhost) {
 
 		const href = hash.for.string || hash.for;
 		const classes = buildLinkClasses(ghost('url'), href, hash, data.relativeUrl);
-		return new SafeString(classes.join(' '));
+		return new Handlebars.SafeString(classes.join(' '));
 	});
 }

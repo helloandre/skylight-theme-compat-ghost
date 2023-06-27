@@ -5,8 +5,8 @@
 //
 // Defaults to words="50"
 
-import { HelperOptions } from 'handlebars';
-import { SafeString } from 'handlebars';
+import type { HelperOptions } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import isEmpty from '../utils/is_empty';
 import { WorkersCompatGhost } from '..';
 import truncate from '../utils/truncate';
@@ -27,6 +27,6 @@ export default function (instance: WorkersCompatGhost) {
 			options.hash.characters = this.custom_excerpt.length;
 		}
 
-		return new SafeString(truncate(excerptText, options.hash));
+		return new Handlebars.SafeString(truncate(excerptText, options.hash));
 	});
 }

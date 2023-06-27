@@ -2,8 +2,9 @@ import { merge, get as lget } from 'lodash-es';
 
 const CONFIG: { [idx: string]: any } = {};
 
-export function init(type: string, base: any, provided: any) {
-	CONFIG[type] = merge(provided, base);
+export function init(type: string, conf: any, defaults: any) {
+	// YES IT'S BACKWARDS
+	CONFIG[type] = merge(defaults, conf);
 }
 
 export function get(type: string, path?: string) {

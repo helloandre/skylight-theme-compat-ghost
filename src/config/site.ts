@@ -43,7 +43,7 @@ export function init(config: SiteConfiguration, ghost: GhostConfiguration) {
 	if (!config.url) {
 		config.url = ghost.url;
 	}
-	baseinit('site', DEFAULTS, config);
+	baseinit('site', config, DEFAULTS);
 }
 
 export function site(path?: string) {

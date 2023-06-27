@@ -5,9 +5,8 @@
 // Checks if a post has a particular property
 
 import { get, isEmpty, isFinite } from 'lodash-es';
-import { HelperOptions } from 'handlebars';
+import type { HelperOptions } from 'handlebars';
 import { WorkersCompatGhost } from '..';
-import { getTemplateData } from '../utils/helper_data';
 
 const validAttrs = ['tag', 'author', 'slug', 'visibility', 'id', 'number', 'index', 'any', 'all'];
 

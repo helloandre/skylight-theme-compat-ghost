@@ -184,7 +184,7 @@ export function init(config: GhostConfiguration) {
 
 	config.subdir = new URL(config.url).pathname.replace(/\/$/, '');
 
-	baseinit('ghost', DEFAULTS, config);
+	baseinit('ghost', config, DEFAULTS);
 }
 
 export function ghost(path?: string) {

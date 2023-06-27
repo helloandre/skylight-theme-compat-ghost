@@ -1,4 +1,5 @@
-import { HelperOptions, SafeString } from 'handlebars';
+import type { HelperOptions } from 'handlebars';
+import { Handlebars } from 'workers-hbs';
 import isEmpty from '../utils/is_empty';
 import { WorkersCompatGhost } from '..';
 
@@ -60,7 +61,7 @@ export default function (instance: WorkersCompatGhost) {
 
 		// If any of the attributes are safe strings, change them back to their original value
 		attrs = attrs.map(attr => {
-			if (attr instanceof SafeString) {
+			if (attr instanceof Handlebars.SafeString) {
 				return attr.toString();
 			}
 
