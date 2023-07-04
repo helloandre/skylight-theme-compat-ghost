@@ -1,8 +1,11 @@
 {
-	"name": "workers-compat-ghost-theme",
+	"name": "skylight-theme-compat-ghost",
 	"version": "0.1.0",
 	"description": "",
 	"main": "dist/index.js",
+	"repository": "github.com/helloandre/skylight-theme-compat-ghost",
+	"author": "Andre Bluehs <hello@andre.blue>",
+	"license": "MIT",
 	"scripts": {
 		"build": "rimraf dist && npm run build:js && npm run build:d",
 		"build:dev": "rimraf dist && npm run build:d && npm run build:js-dev",
@@ -11,13 +14,10 @@
 		"build:d": "tsc -p . --excludeFiles \"*.test.ts\"",
 		"local": "wrangler dev --local src/main.ts --compatibility-date=2023-04-12 --node-compat"
 	},
-	"author": "Andre Bluehs <hello@andre.blue>",
-	"license": "MIT",
 	"devDependencies": {
 		"@types/lodash-es": "^4.17.7",
 		"@types/luxon": "^3.3.0",
 		"esbuild": "^0.17.18",
-		"handlebars": "^4.7.7",
 		"rimraf": "^5.0.0",
 		"typescript": "^5.0.4"
 	},
@@ -25,6 +25,6 @@
 		"lodash-es": "^4.17.21",
 		"luxon": "^3.3.0",
 		"truncate-html": "^1.0.4",
-		"workers-hbs": "file:../workers-hbs"
+		"workers-hbs": "^1.0.0"
 	}
 }
