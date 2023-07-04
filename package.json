@@ -12,7 +12,8 @@
 		"build:js": "npx esbuild --bundle --minify --platform=node --outfile=dist/index.js ./src/index.ts",
 		"build:js-dev": "npx esbuild --bundle --watch --platform=node --outfile=dist/index.js ./src/index.ts",
 		"build:d": "tsc -p . --excludeFiles \"*.test.ts\"",
-		"local": "wrangler dev --local src/main.ts --compatibility-date=2023-04-12 --node-compat"
+		"local": "wrangler dev --local src/main.ts --compatibility-date=2023-04-12 --node-compat",
+		"prepack": "npm run build"
 	},
 	"devDependencies": {
 		"@types/lodash-es": "^4.17.7",
