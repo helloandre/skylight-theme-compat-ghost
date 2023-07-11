@@ -1,18 +1,20 @@
 // @ts-ignore-next
 import { WorkersHbs, Handlebars } from 'workers-hbs';
-import resolvePath from './utils/resolve_path';
 import { GhostConfiguration, init as ghostInit } from './config/ghost';
 import { SiteConfiguration, site as siteConfig, init as siteInit } from './config/site';
 import { ThemeConfiguration, theme as themeConfig, init as customInit } from './config/theme';
+import { layout_tree, LAYOUT_PATTERN } from './utils/layout_tree';
 
 // helper registerers
 // this follows the same pattern as Handlebars/WorkersHBS
 // but diverges quite a bit from Ghost
 import asset from './helpers/asset';
 import authors from './helpers/authors';
+import block from './helpers/block';
 import body_class from './helpers/body_class';
 import concat from './helpers/concat';
 import content from './helpers/content';
+import content_for from './helpers/content_for';
 import date from './helpers/date';
 import excerpt from './helpers/excerpt';
 import foreach from './helpers/foreach';
@@ -34,9 +36,11 @@ import url from './helpers/url';
 const HELPERS: { [idx: string]: (inst: WorkersCompatGhost) => void } = {
 	asset,
 	authors,
+	block,
 	body_class,
 	concat,
 	content,
+	content_for,
 	date,
 	excerpt,
 	foreach,
@@ -91,10 +95,6 @@ export type PaginationSettings = {
 	prev?: number;
 };
 
-/**
- * Regex pattern for layout directive. {{!< layout }}
- */
-const LAYOUT_PATTERN = /{{!<\s+([A-Za-z0-9\._\-\/]+)\s*}}/;
 const SAFE_VERSION = '0.0.1';
 
 export class WorkersCompatGhost {
@@ -191,32 +191,24 @@ export class WorkersCompatGhost {
 			},
 		};
 
-		return this.renderLayout(templateName);
-	}
-
-	/* end public methods */
-
-	/* begin private methods */
-	private renderLayout(templateName: keyof TemplatesObj, child?: string): string {
 		if (!this.templates.hasOwnProperty(templateName)) {
 			throw new Error(`unknown template ${templateName}`);
 		}
 
-		const templateStr = this.templates[templateName];
-		this.context.body = child ? new Handlebars.SafeString(child) : '';
-
-		const matches = templateStr.match(LAYOUT_PATTERN);
-		// we have to go a level higher into a parent template
-		if (matches) {
-			return this.renderLayout(
-				resolvePath(templateName as string, matches[1]),
-				this.hbs.render(templateStr.replace(LAYOUT_PATTERN, ''), this.context, this.runtimeOptions)
+		const tree = layout_tree(templateName, this.templates);
+		return tree.reduce((acc: string, name: string) => {
+			this.context.body = new Handlebars.SafeString(acc);
+			return this.hbs.render(
+				this.templates[name].replace(LAYOUT_PATTERN, ''),
+				this.context,
+				this.runtimeOptions
 			);
-		}
-
-		return this.hbs.render(templateStr, this.context, this.runtimeOptions);
+		}, '');
 	}
+
+	/* end public methods */
 }
 
 const thereCanOnlyBeOne = new WorkersCompatGhost();
 export default thereCanOnlyBeOne;
+export { layout_tree } from './utils/layout_tree';

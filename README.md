@@ -14,8 +14,10 @@ The helpers listed below (as well as necessary utils and partials) are heavily i
 
 - ✅ asset
 - ✅ authors
+- ✅ block
 - ✅ body_class
 - ❌ cancel_link
+- ✅ content_for
 - ❌ comment_count
 - ❌ commets
 - ✅ concat
