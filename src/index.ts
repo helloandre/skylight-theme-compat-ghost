@@ -191,10 +191,6 @@ export class WorkersCompatGhost {
 			},
 		};
 
-		if (!this.templates.hasOwnProperty(templateName)) {
-			throw new Error(`unknown template ${templateName}`);
-		}
-
 		const tree = layout_tree(templateName, this.templates);
 		return tree.reduce((acc: string, name: string) => {
 			this.context.body = new Handlebars.SafeString(acc);

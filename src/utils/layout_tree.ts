@@ -15,7 +15,7 @@ export function layout_tree(
 	templates: TemplatesObj,
 	path: string[] = []
 ): string[] {
-	if (!templates[name]) {
+	if (!templates.hasOwnProperty(name)) {
 		throw new Error(`unknown template ${name}`);
 	}
 
